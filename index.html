@@ -112,7 +112,7 @@
       
       chapterSelect.innerHTML = chapters.map(c => {
         const isDone = localStorage.getItem(`quiz_done_${selectedBook}_${c}`);
-        return `<option value="${c}">${c} அதிகாரம ${isDone ? '✅' : ''}</option>`;
+        return `<option value="${c}">${c} அதிகாரம் ${isDone ? '✅' : ''}</option>`;
       }).join('');
       
       filterQuestions();
