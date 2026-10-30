@@ -10,8 +10,10 @@
     * { box-sizing: border-box; font-family: 'Noto Sans Tamil', sans-serif; margin: 0; padding: 0; }
     body { background-color: #f4f6f8; color: #2d3748; padding: 16px; max-width: 500px; margin: 0 auto; }
     
-    header { text-align: center; margin-bottom: 20px; }
-    h1 { color: #2b6cb0; font-size: 1.5rem; margin-bottom: 4px; }
+    header { text-align: center; margin-bottom: 16px; }
+    h1 { color: #2b6cb0; font-size: 1.4rem; margin-bottom: 4px; }
+    
+    .stats-bar { background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 10px; margin-bottom: 16px; font-size: 0.85rem; display: flex; justify-content: space-around; text-align: center; }
     
     .filter-card, .quiz-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 16px; }
     label { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 6px; color: #4a5568; }
@@ -34,34 +36,38 @@
 
   <header>
     <h1>வேதாகம வினாடி வினா</h1>
-    <p style="font-size: 0.85rem; color: #718096;">Bible Quiz Application</p>
+    <p style="font-size: 0.8rem; color: #718096;">Bible Quiz Application</p>
   </header>
 
-  <div id="loading" class="loading">தரவுகள் ஏற்றப்படுகின்றன... (Loading Questions...)</div>
+  <!-- User Stats / Local Storage Summary -->
+  <div class="stats-bar" id="statsBar">
+    <div>முடிந்த வினாடி வினாக்கள்: <strong id="statCompleted">0</strong></div>
+    <div>மொத்த மதிப்பெண்: <strong id="statScore">0</strong></div>
+  </div>
+
+  <div id="loading" class="loading">தரவுகள் ஏற்றப்படுகின்றன... (Loading...)</div>
 
   <div id="app" style="display: none;">
-    <!-- Book & Chapter Selectors -->
     <div class="filter-card">
       <label for="bookSelect">புத்தகம் (Book):</label>
-      <select id="bookSelect" onchange="filterQuestions()"></select>
+      <select id="bookSelect" onchange="populateChapterDropdown()"></select>
 
       <label for="chapterSelect">அதிகாரம் (Chapter):</label>
       <select id="chapterSelect" onchange="filterQuestions()"></select>
     </div>
 
-    <!-- Quiz Display Card -->
     <div class="quiz-card" id="quizCard">
       <div id="quizContent"></div>
     </div>
   </div>
 
   <script>
-    // Replace this with your Google Apps Script Web App Deployment URL
     const API_URL = "https://script.google.com/macros/s/AKfycbzGjabv1q3qpP8Oy1PA8PuxYx4P7zta0QCW3L72VUdDkEdsT6qJyUd6ALnLa68eJ2sGqg/exec";
 
     let allQuestions = [];
     let currentFiltered = [];
     let currentIndex = 0;
+    let scoreInSession = 0;
 
     async function fetchQuestions() {
       try {
@@ -71,10 +77,19 @@
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
         
+        updateStatsUI();
         populateBookDropdown();
       } catch (err) {
         document.getElementById("loading").innerText = "தரவுகளை ஏற்ற முடியவில்லை. URL-ஐ சரிபார்க்கவும்.";
       }
+    }
+
+    function updateStatsUI() {
+      const completedCount = localStorage.getItem("bible_quiz_completed_count") || 0;
+      const totalScore = localStorage.getItem("bible_quiz_total_score") || 0;
+      
+      document.getElementById("statCompleted").innerText = completedCount;
+      document.getElementById("statScore").innerText = totalScore;
     }
 
     function populateBookDropdown() {
@@ -93,7 +108,11 @@
         allQuestions.filter(q => q["Bible Book"] === selectedBook).map(q => q["Chapter"])
       )];
       
-      chapterSelect.innerHTML = chapters.map(c => `<option value="${c}">${c}</option>`).join('');
+      chapterSelect.innerHTML = chapters.map(c => {
+        const isDone = localStorage.getItem(`quiz_done_${selectedBook}_${c}`);
+        return `<option value="${c}">${c} அதிகாரம ${isDone ? '✅' : ''}</option>`;
+      }).join('');
+      
       filterQuestions();
     }
 
@@ -106,6 +125,7 @@
       );
       
       currentIndex = 0;
+      scoreInSession = 0;
       renderQuestion();
     }
 
@@ -117,7 +137,7 @@
       }
 
       const q = currentFiltered[currentIndex];
-      const answerKey = q["Answer"].trim(); // E.g., 'Option C'
+      const answerKey = q["Answer"].trim();
       
       container.innerHTML = `
         <p style="font-size:0.8rem; color:#718096; margin-bottom:8px;">கேள்வி ${currentIndex + 1} / ${currentFiltered.length}</p>
@@ -135,21 +155,21 @@
         </div>
 
         ${currentIndex < currentFiltered.length - 1 
-          ? `<button class="nav-btn" onclick="nextQuestion()">அடுத்த கேள்வி (Next)</button>`
-          : `<p style="margin-top:16px; text-align:center; font-weight:bold; color:#2b6cb0;">அதிகாரம் முடிந்தது! 🎉</p>`
+          ? `<button class="nav-btn" id="nextBtn" style="display:none;" onclick="nextQuestion()">அடுத்த கேள்வி (Next)</button>`
+          : `<button class="nav-btn" id="finishBtn" style="display:none; background:#38a169;" onclick="finishQuiz()">முடிவுப்பகுதியைச் சேமி (Finish)</button>`
         }
       `;
     }
 
     function checkAnswer(btn, selected, correct) {
       const buttons = document.querySelectorAll('.option-btn');
-      buttons.forEach(b => b.disabled = true); // Lock options
+      buttons.forEach(b => b.disabled = true);
 
       if (selected === correct) {
         btn.classList.add('correct');
+        scoreInSession++;
       } else {
         btn.classList.add('wrong');
-        // Highlight correct option
         buttons.forEach(b => {
           if (b.getAttribute('onclick').includes(`'${correct}'`)) {
             b.classList.add('correct');
@@ -158,6 +178,12 @@
       }
 
       document.getElementById('expBox').style.display = 'block';
+      
+      // Show appropriate next/finish button
+      const nextBtn = document.getElementById('nextBtn');
+      const finishBtn = document.getElementById('finishBtn');
+      if (nextBtn) nextBtn.style.display = 'block';
+      if (finishBtn) finishBtn.style.display = 'block';
     }
 
     function nextQuestion() {
@@ -165,7 +191,30 @@
       renderQuestion();
     }
 
-    // Initialize fetch on page load
+    function finishQuiz() {
+      const selectedBook = document.getElementById("bookSelect").value;
+      const selectedChapter = document.getElementById("chapterSelect").value;
+      const quizKey = `quiz_done_${selectedBook}_${selectedChapter}`;
+
+      // Check if this chapter was already completed before
+      if (!localStorage.getItem(quizKey)) {
+        localStorage.setItem(quizKey, "true");
+        
+        let currentCompleted = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
+        localStorage.setItem("bible_quiz_completed_count", currentCompleted + 1);
+      }
+
+      // Add to total score
+      let currentTotalScore = parseInt(localStorage.getItem("bible_quiz_total_score") || "0");
+      localStorage.setItem("bible_quiz_total_score", currentTotalScore + scoreInSession);
+
+      updateStatsUI();
+      alert(`அதிகாரம் வெற்றிகரமாக முடிக்கப்பட்டது! நீங்கள் பெற்ற மதிப்பெண்: ${scoreInSession} / ${currentFiltered.length}`);
+      
+      // Reset or reload chapter view
+      populateChapterDropdown();
+    }
+
     fetchQuestions();
   </script>
 </body>
