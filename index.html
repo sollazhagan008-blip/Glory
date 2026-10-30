@@ -62,7 +62,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzGjabv1q3qpP8Oy1PA8PuxYx4P7zta0QCW3L72VUdDkEdsT6qJyUd6ALnLa68eJ2sGqg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbzQn3k.../exec"; // Keep your existing URL here
 
     let allQuestions = [];
     let currentFiltered = [];
@@ -137,17 +137,17 @@
       }
 
       const q = currentFiltered[currentIndex];
-      const answerKey = q["Answer"].trim();
       
+      // We map options clearly with their keys ('Option A', 'Option B', 'Option C', 'Option D')
       container.innerHTML = `
         <p style="font-size:0.8rem; color:#718096; margin-bottom:8px;">கேள்வி ${currentIndex + 1} / ${currentFiltered.length}</p>
         <div class="question-title">${q["Question"]}</div>
         
         <div class="options">
-          <button class="option-btn" onclick="checkAnswer(this, 'Option A', '${answerKey}')">${q["Option A"]}</button>
-          <button class="option-btn" onclick="checkAnswer(this, 'Option B', '${answerKey}')">${q["Option B"]}</button>
-          <button class="option-btn" onclick="checkAnswer(this, 'Option C', '${answerKey}')">${q["Option C"]}</button>
-          <button class="option-btn" onclick="checkAnswer(this, 'Option D', '${answerKey}')">${q["Option D"]}</button>
+          <button class="option-btn" data-key="Option A" onclick="checkAnswer(this, 'Option A')">${q["Option A"]}</button>
+          <button class="option-btn" data-key="Option B" onclick="checkAnswer(this, 'Option B')">${q["Option B"]}</button>
+          <button class="option-btn" data-key="Option C" onclick="checkAnswer(this, 'Option C')">${q["Option C"]}</button>
+          <button class="option-btn" data-key="Option D" onclick="checkAnswer(this, 'Option D')">${q["Option D"]}</button>
         </div>
 
         <div class="explanation" id="expBox">
@@ -161,42 +161,39 @@
       `;
     }
 
-  // This is the NEW, corrected checkAnswer function
-function checkAnswer(btn, selected, correct) {
-  const buttons = document.querySelectorAll('.option-btn');
-  // Step 1: Immediately disable all buttons and lock the choices
-  buttons.forEach(b => b.disabled = true);
+    function checkAnswer(btn, selectedKey) {
+      const q = currentFiltered[currentIndex];
+      // Clean up answer string to match format securely (e.g., 'Option C')
+      const correctKey = q["Answer"].trim(); 
 
-  // Step 2: Mark the user's selection
-  if (selected === correct) {
-    // Correct selection: Highlight user's button as green
-    btn.classList.add('correct');
-    // Add to session score (the existing logic will still work with local storage)
-    scoreInSession++;
-  } else {
-    // Incorrect selection: Highlight user's button as red
-    btn.classList.add('wrong');
-  }
+      const buttons = document.querySelectorAll('.option-btn');
+      // Disable all options immediately so user can't tap twice
+      buttons.forEach(b => b.disabled = true);
 
-  // Step 3: Find and highlight *only* the single correct option
-  // This is the key change to fix the multiple green boxes.
-  buttons.forEach(b => {
-    // We use a stricter check: the 'onclick' attribute must *exactly* contain the string "'${correct}'"
-    // in the format ('Option X', 'correct answer key') that our checkAnswer is called with.
-    if (b.getAttribute('onclick').includes(`, '${correct}'`)) {
-      b.classList.add('correct');
+      // Evaluate correctness using the exact data-key attribute
+      buttons.forEach(b => {
+        const bKey = b.getAttribute('data-key');
+        if (bKey === correctKey) {
+          b.classList.add('correct'); // Only the true answer turns green
+        }
+      });
+
+      if (selectedKey === correctKey) {
+        scoreInSession++;
+      } else {
+        btn.classList.add('wrong'); // User's wrong pick turns red
+      }
+
+      // Show explanation box
+      document.getElementById('expBox').style.display = 'block';
+      
+      // Reveal navigation button
+      const nextBtn = document.getElementById('nextBtn');
+      const finishBtn = document.getElementById('finishBtn');
+      if (nextBtn) nextBtn.style.display = 'block';
+      if (finishBtn) finishBtn.style.display = 'block';
     }
-  });
 
-  // Step 4: Show the explanation and verse reference
-  document.getElementById('expBox').style.display = 'block';
-
-  // Step 5: Reveal the navigation buttons ('Next Question' or 'Finish Quiz')
-  const nextBtn = document.getElementById('nextBtn');
-  const finishBtn = document.getElementById('finishBtn');
-  if (nextBtn) nextBtn.style.display = 'block';
-  if (finishBtn) finishBtn.style.display = 'block';
-}
     function nextQuestion() {
       currentIndex++;
       renderQuestion();
@@ -207,22 +204,18 @@ function checkAnswer(btn, selected, correct) {
       const selectedChapter = document.getElementById("chapterSelect").value;
       const quizKey = `quiz_done_${selectedBook}_${selectedChapter}`;
 
-      // Check if this chapter was already completed before
       if (!localStorage.getItem(quizKey)) {
         localStorage.setItem(quizKey, "true");
-        
         let currentCompleted = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
         localStorage.setItem("bible_quiz_completed_count", currentCompleted + 1);
       }
 
-      // Add to total score
       let currentTotalScore = parseInt(localStorage.getItem("bible_quiz_total_score") || "0");
       localStorage.setItem("bible_quiz_total_score", currentTotalScore + scoreInSession);
 
       updateStatsUI();
       alert(`அதிகாரம் வெற்றிகரமாக முடிக்கப்பட்டது! நீங்கள் பெற்ற மதிப்பெண்: ${scoreInSession} / ${currentFiltered.length}`);
       
-      // Reset or reload chapter view
       populateChapterDropdown();
     }
 
