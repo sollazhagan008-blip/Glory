@@ -10,25 +10,40 @@
     * { box-sizing: border-box; font-family: 'Noto Sans Tamil', sans-serif; margin: 0; padding: 0; }
     body { background-color: #f4f6f8; color: #2d3748; padding: 16px; max-width: 500px; margin: 0 auto; }
     
-    header { text-align: center; margin-bottom: 16px; }
-    h1 { color: #2b6cb0; font-size: 1.4rem; margin-bottom: 4px; }
+    header { text-align: center; margin-bottom: 14px; }
+    h1 { color: #2b6cb0; font-size: 1.3rem; margin-bottom: 4px; }
     
-    .stats-bar { background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 10px; margin-bottom: 16px; font-size: 0.85rem; display: flex; justify-content: space-around; text-align: center; }
+    .stats-bar { background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 8px; margin-bottom: 12px; font-size: 0.8rem; display: flex; justify-content: space-around; text-align: center; }
     
-    .filter-card, .quiz-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 16px; }
-    label { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 6px; color: #4a5568; }
-    select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 1rem; margin-bottom: 12px; }
+    .filter-card, .quiz-card { background: white; border-radius: 12px; padding: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
+    label { font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px; color: #4a5568; }
+    select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 0.95rem; margin-bottom: 10px; }
     
-    .question-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; line-height: 1.4; }
-    .options { display: flex; flex-direction: column; gap: 10px; }
-    .option-btn { width: 100%; padding: 12px; text-align: left; background: #edf2f7; border: 2px solid transparent; border-radius: 8px; font-size: 1rem; min-height: 48px; cursor: pointer; transition: 0.2s; }
+    /* Jump-to-Question Grid */
+    .jump-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(36px, 1fr)); gap: 6px; max-height: 120px; overflow-y: auto; margin-top: 8px; padding: 4px; }
+    .jump-btn { background: #edf2f7; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 0.85rem; padding: 6px 0; font-weight: 600; cursor: pointer; text-align: center; }
+    .jump-btn.current { border-color: #3182ce; background: #bee3f8; color: #2b6cb0; }
+    .jump-btn.answered { background: #c6f6d5; border-color: #38a169; color: #22543d; }
+    .jump-btn.flagged { background: #feebc8; border-color: #dd6b20; color: #7b341e; }
+
+    .question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .flag-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; }
+
+    .question-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 14px; line-height: 1.4; }
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option-btn { width: 100%; padding: 10px 12px; text-align: left; background: #edf2f7; border: 2px solid transparent; border-radius: 8px; font-size: 0.95rem; min-height: 44px; cursor: pointer; transition: 0.15s; }
     
+    .option-btn.selected { background: #e2e8f0; border-color: #4a5568; font-weight: 600; }
     .option-btn.correct { background-color: #c6f6d5; border-color: #38a169; color: #22543d; }
     .option-btn.wrong { background-color: #fed7d7; border-color: #e53e3e; color: #742a2a; }
     
-    .explanation { margin-top: 14px; padding: 10px; background: #ebf8ff; border-left: 4px solid #3182ce; border-radius: 4px; font-size: 0.9rem; display: none; }
+    .explanation { margin-top: 12px; padding: 10px; background: #ebf8ff; border-left: 4px solid #3182ce; border-radius: 4px; font-size: 0.85rem; display: none; }
     
-    .nav-btn { width: 100%; margin-top: 16px; padding: 12px; background: #3182ce; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+    .nav-buttons { display: flex; gap: 8px; margin-top: 14px; }
+    .nav-btn { flex: 1; padding: 10px; background: #3182ce; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; }
+    .nav-btn.secondary { background: #718096; }
+    .finish-btn { width: 100%; margin-top: 12px; padding: 12px; background: #38a169; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+    
     .loading { text-align: center; padding: 20px; font-weight: 600; color: #718096; }
   </style>
 </head>
@@ -36,39 +51,48 @@
 
   <header>
     <h1>வேதாகம வினாடி வினா</h1>
-    <p style="font-size: 0.8rem; color: #718096;">Bible Quiz Application</p>
+    <p style="font-size: 0.75rem; color: #718096;">Advanced Bible Quiz Platform</p>
   </header>
 
-  <!-- User Stats / Local Storage Summary -->
   <div class="stats-bar" id="statsBar">
-    <div>முடிந்த வினாடி வினாக்கள்: <strong id="statCompleted">0</strong></div>
-    <div>மொத்த மதிப்பெண்: <strong id="statScore">0</strong></div>
+    <div>முடிந்தது: <strong id="statCompleted">0</strong></div>
+    <div>மதிப்பெண்: <strong id="statScore">0</strong></div>
   </div>
 
   <div id="loading" class="loading">தரவுகள் ஏற்றப்படுகின்றன... (Loading...)</div>
 
   <div id="app" style="display: none;">
+    <!-- Book & Chapter Selectors -->
     <div class="filter-card">
       <label for="bookSelect">புத்தகம் (Book):</label>
       <select id="bookSelect" onchange="populateChapterDropdown()"></select>
 
       <label for="chapterSelect">அதிகாரம் (Chapter):</label>
       <select id="chapterSelect" onchange="filterQuestions()"></select>
+
+      <!-- Jump-to-Question Section -->
+      <label style="margin-top: 8px;">வினா பட்டியல் (Jump to Question):</label>
+      <div class="jump-grid" id="jumpGrid"></div>
     </div>
 
+    <!-- Quiz Display Card -->
     <div class="quiz-card" id="quizCard">
       <div id="quizContent"></div>
     </div>
   </div>
 
-<script>
+  <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzGjabv1q3qpP8Oy1PA8PuxYx4P7zta0QCW3L72VUdDkEdsT6qJyUd6ALnLa68eJ2sGqg/exec"; // Keep your Google Apps Script URL here
 
     let allQuestions = [];
     let currentFiltered = [];
     let currentIndex = 0;
-    let scoreInSession = 0;
-    let attemptedInSession = 0;
+    
+    // User session states stored per question index:
+    // userAnswers[i] = 'Option A' (or null)
+    // userFlagged[i] = true/false
+    let userAnswers = {};
+    let userFlagged = {};
 
     async function fetchQuestions() {
       try {
@@ -86,7 +110,6 @@
     }
 
     function updateStatsUI() {
-      // Safely parse numbers from localStorage
       const completedCount = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
       const totalScore = parseInt(localStorage.getItem("bible_quiz_total_score") || "0");
       
@@ -127,9 +150,26 @@
       );
       
       currentIndex = 0;
-      scoreInSession = 0;
-      attemptedInSession = 0;
+      userAnswers = {};
+      userFlagged = {};
+      renderQuiz();
+    }
+
+    function renderQuiz() {
+      renderJumpGrid();
       renderQuestion();
+    }
+
+    function renderJumpGrid() {
+      const grid = document.getElementById("jumpGrid");
+      grid.innerHTML = currentFiltered.map((_, idx) => {
+        let className = "jump-btn";
+        if (idx === currentIndex) className += " current";
+        else if (userAnswers[idx]) className += " answered";
+        if (userFlagged[idx]) className += " flagged";
+        
+        return `<button class="${className}" onclick="goToQuestion(${idx})">${idx + 1}</button>`;
+      }).join('');
     }
 
     function renderQuestion() {
@@ -140,71 +180,101 @@
       }
 
       const q = currentFiltered[currentIndex];
-      
+      const selectedKey = userAnswers[currentIndex] || null;
+      const isFlagged = userFlagged[currentIndex] || false;
+      const correctKey = q["Answer"].trim();
+
+      // Check if this question was already answered / evaluated
+      const isAnswered = selectedKey !== null;
+
       container.innerHTML = `
-        <p style="font-size:0.8rem; color:#718096; margin-bottom:8px;">கேள்வி ${currentIndex + 1} / ${currentFiltered.length}</p>
+        <div class="question-header">
+          <p style="font-size:0.8rem; color:#718096;">கேள்வி ${currentIndex + 1} / ${currentFiltered.length}</p>
+          <button class="flag-btn" onclick="toggleFlag()" title="Flag Question">
+            ${isFlagged ? '🚩' : '🏳️'}
+          </button>
+        </div>
+        
         <div class="question-title">${q["Question"]}</div>
         
         <div class="options">
-          <button class="option-btn" data-key="Option A" onclick="checkAnswer(this, 'Option A')">${q["Option A"]}</button>
-          <button class="option-btn" data-key="Option B" onclick="checkAnswer(this, 'Option B')">${q["Option B"]}</button>
-          <button class="option-btn" data-key="Option C" onclick="checkAnswer(this, 'Option C')">${q["Option C"]}</button>
-          <button class="option-btn" data-key="Option D" onclick="checkAnswer(this, 'Option D')">${q["Option D"]}</button>
+          <button class="option-btn ${selectedKey === 'Option A' ? (isAnswered && selectedKey === correctKey ? 'correct' : 'selected') : ''}" data-key="Option A" onclick="handleOptionClick('Option A')">${q["Option A"]}</button>
+          <button class="option-btn ${selectedKey === 'Option B' ? (isAnswered && selectedKey === correctKey ? 'correct' : 'selected') : ''}" data-key="Option B" onclick="handleOptionClick('Option B')">${q["Option B"]}</button>
+          <button class="option-btn ${selectedKey === 'Option C' ? (isAnswered && selectedKey === correctKey ? 'correct' : 'selected') : ''}" data-key="Option C" onclick="handleOptionClick('Option C')">${q["Option C"]}</button>
+          <button class="option-btn ${selectedKey === 'Option D' ? (isAnswered && selectedKey === correctKey ? 'correct' : 'selected') : ''}" data-key="Option D" onclick="handleOptionClick('Option D')">${q["Option D"]}</button>
         </div>
 
-        <div class="explanation" id="expBox">
+        <div class="explanation" id="expBox" style="display: ${isAnswered ? 'block' : 'none'};">
           <strong>விளக்கம்:</strong> ${q["Solution / Explanation"]}
         </div>
 
-        ${currentIndex < currentFiltered.length - 1 
-          ? `<button class="nav-btn" id="nextBtn" style="display:none;" onclick="nextQuestion()">அடுத்த கேள்வி (Next)</button>`
-          : `<button class="nav-btn" id="finishBtn" style="display:none; background:#38a169;" onclick="finishQuiz()">முடிவுப்பகுதியைச் சேமி (Finish)</button>`
-        }
+        <div class="nav-buttons">
+          <button class="nav-btn secondary" onclick="prevQuestion()" ${currentIndex === 0 ? 'disabled style="opacity:0.5;"' : ''}>முந்தைய (Prev)</button>
+          <button class="nav-btn" onclick="nextQuestion()" ${currentIndex === currentFiltered.length - 1 ? 'disabled style="opacity:0.5;"' : ''}>அடுத்த (Next)</button>
+        </div>
+
+        ${currentIndex === currentFiltered.length - 1 ? `
+          <button class="finish-btn" onclick="finishQuiz()">அதிகாரத்தை முடிக்க (Finish Quiz)</button>
+        ` : ''}
       `;
     }
 
-    function checkAnswer(btn, selectedKey) {
-      const q = currentFiltered[currentIndex];
-      const correctKey = q["Answer"].trim(); 
+    function handleOptionClick(optionKey) {
+      const correctKey = currentFiltered[currentIndex]["Answer"].trim();
 
-      const buttons = document.querySelectorAll('.option-btn');
-      buttons.forEach(b => b.disabled = true); // Lock options
-
-      // Highlight correct answer in green
-      buttons.forEach(b => {
-        if (b.getAttribute('data-key') === correctKey) {
-          b.classList.add('correct');
-        }
-      });
-
-      // Track score and attempts accurately
-      attemptedInSession++;
-      if (selectedKey === correctKey) {
-        scoreInSession++;
+      // Feature 1: Clear response by tapping the same option twice
+      if (userAnswers[currentIndex] === optionKey) {
+        userAnswers[currentIndex] = null; // Deselect
       } else {
-        btn.classList.add('wrong'); // Highlight user's wrong choice in red
+        userAnswers[currentIndex] = optionKey; // Select / Change response
       }
 
-      // Show explanation box & navigation button
-      document.getElementById('expBox').style.display = 'block';
-      
-      const nextBtn = document.getElementById('nextBtn');
-      const finishBtn = document.getElementById('finishBtn');
-      if (nextBtn) nextBtn.style.display = 'block';
-      if (finishBtn) finishBtn.style.display = 'block';
+      renderQuiz();
     }
 
-    function nextQuestion() {
-      currentIndex++;
+    function toggleFlag() {
+      userFlagged[currentIndex] = !userFlagged[currentIndex];
+      renderJumpGrid();
       renderQuestion();
     }
 
+    function prevQuestion() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuiz();
+      }
+    }
+
+    function nextQuestion() {
+      if (currentIndex < currentFiltered.length - 1) {
+        currentIndex++;
+        renderQuiz();
+      }
+    }
+
+    function goToQuestion(index) {
+      currentIndex = index;
+      renderQuiz();
+    }
+
     function finishQuiz() {
+      let score = 0;
+      let attempted = 0;
+
+      currentFiltered.forEach((q, idx) => {
+        const userAns = userAnswers[idx];
+        if (userAns !== undefined && userAns !== null) {
+          attempted++;
+          if (userAns === q["Answer"].trim()) {
+            score++;
+          }
+        }
+      });
+
       const selectedBook = document.getElementById("bookSelect").value;
       const selectedChapter = document.getElementById("chapterSelect").value;
       const quizKey = `quiz_done_${selectedBook}_${selectedChapter}`;
 
-      // Update completed chapter count safely using parseInt
       let currentCompleted = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
       if (!localStorage.getItem(quizKey)) {
         localStorage.setItem(quizKey, "true");
@@ -212,13 +282,12 @@
         localStorage.setItem("bible_quiz_completed_count", currentCompleted);
       }
 
-      // Update total score safely using parseInt
       let currentTotalScore = parseInt(localStorage.getItem("bible_quiz_total_score") || "0");
-      currentTotalScore += scoreInSession;
+      currentTotalScore += score;
       localStorage.setItem("bible_quiz_total_score", currentTotalScore);
 
       updateStatsUI();
-      alert(`அதிகாரம் வெற்றிகரமாக முடிக்கப்பட்டது!\nமுடித்த கேள்விகள்: ${attemptedInSession}\nசரியான பதில்கள் (மதிப்பெண்): ${scoreInSession} / ${currentFiltered.length}`);
+      alert(`🎉 அதிகாரம் வெற்றிகரமாக முடிக்கப்பட்டது!\nமுடித்த கேள்விகள்: ${attempted} / ${currentFiltered.length}\nபெற்ற மதிப்பெண்: ${score}`);
       
       populateChapterDropdown();
     }
