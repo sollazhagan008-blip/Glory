@@ -61,13 +61,14 @@
     </div>
   </div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzGjabv1q3qpP8Oy1PA8PuxYx4P7zta0QCW3L72VUdDkEdsT6qJyUd6ALnLa68eJ2sGqg/exec"; // Keep your existing URL here
+<script>
+    const API_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"; // Keep your Google Apps Script URL here
 
     let allQuestions = [];
     let currentFiltered = [];
     let currentIndex = 0;
     let scoreInSession = 0;
+    let attemptedInSession = 0;
 
     async function fetchQuestions() {
       try {
@@ -85,8 +86,9 @@
     }
 
     function updateStatsUI() {
-      const completedCount = localStorage.getItem("bible_quiz_completed_count") || 0;
-      const totalScore = localStorage.getItem("bible_quiz_total_score") || 0;
+      // Safely parse numbers from localStorage
+      const completedCount = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
+      const totalScore = parseInt(localStorage.getItem("bible_quiz_total_score") || "0");
       
       document.getElementById("statCompleted").innerText = completedCount;
       document.getElementById("statScore").innerText = totalScore;
@@ -126,6 +128,7 @@
       
       currentIndex = 0;
       scoreInSession = 0;
+      attemptedInSession = 0;
       renderQuestion();
     }
 
@@ -138,7 +141,6 @@
 
       const q = currentFiltered[currentIndex];
       
-      // We map options clearly with their keys ('Option A', 'Option B', 'Option C', 'Option D')
       container.innerHTML = `
         <p style="font-size:0.8rem; color:#718096; margin-bottom:8px;">கேள்வி ${currentIndex + 1} / ${currentFiltered.length}</p>
         <div class="question-title">${q["Question"]}</div>
@@ -163,31 +165,29 @@
 
     function checkAnswer(btn, selectedKey) {
       const q = currentFiltered[currentIndex];
-      // Clean up answer string to match format securely (e.g., 'Option C')
       const correctKey = q["Answer"].trim(); 
 
       const buttons = document.querySelectorAll('.option-btn');
-      // Disable all options immediately so user can't tap twice
-      buttons.forEach(b => b.disabled = true);
+      buttons.forEach(b => b.disabled = true); // Lock options
 
-      // Evaluate correctness using the exact data-key attribute
+      // Highlight correct answer in green
       buttons.forEach(b => {
-        const bKey = b.getAttribute('data-key');
-        if (bKey === correctKey) {
-          b.classList.add('correct'); // Only the true answer turns green
+        if (b.getAttribute('data-key') === correctKey) {
+          b.classList.add('correct');
         }
       });
 
+      // Track score and attempts accurately
+      attemptedInSession++;
       if (selectedKey === correctKey) {
         scoreInSession++;
       } else {
-        btn.classList.add('wrong'); // User's wrong pick turns red
+        btn.classList.add('wrong'); // Highlight user's wrong choice in red
       }
 
-      // Show explanation box
+      // Show explanation box & navigation button
       document.getElementById('expBox').style.display = 'block';
       
-      // Reveal navigation button
       const nextBtn = document.getElementById('nextBtn');
       const finishBtn = document.getElementById('finishBtn');
       if (nextBtn) nextBtn.style.display = 'block';
@@ -204,17 +204,21 @@
       const selectedChapter = document.getElementById("chapterSelect").value;
       const quizKey = `quiz_done_${selectedBook}_${selectedChapter}`;
 
+      // Update completed chapter count safely using parseInt
+      let currentCompleted = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
       if (!localStorage.getItem(quizKey)) {
         localStorage.setItem(quizKey, "true");
-        let currentCompleted = parseInt(localStorage.getItem("bible_quiz_completed_count") || "0");
-        localStorage.setItem("bible_quiz_completed_count", currentCompleted + 1);
+        currentCompleted += 1;
+        localStorage.setItem("bible_quiz_completed_count", currentCompleted);
       }
 
+      // Update total score safely using parseInt
       let currentTotalScore = parseInt(localStorage.getItem("bible_quiz_total_score") || "0");
-      localStorage.setItem("bible_quiz_total_score", currentTotalScore + scoreInSession);
+      currentTotalScore += scoreInSession;
+      localStorage.setItem("bible_quiz_total_score", currentTotalScore);
 
       updateStatsUI();
-      alert(`அதிகாரம் வெற்றிகரமாக முடிக்கப்பட்டது! நீங்கள் பெற்ற மதிப்பெண்: ${scoreInSession} / ${currentFiltered.length}`);
+      alert(`அதிகாரம் வெற்றிகரமாக முடிக்கப்பட்டது!\nமுடித்த கேள்விகள்: ${attemptedInSession}\nசரியான பதில்கள் (மதிப்பெண்): ${scoreInSession} / ${currentFiltered.length}`);
       
       populateChapterDropdown();
     }
