@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamil Bible Quiz</title>
+  <!-- Google Tamil Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; font-family: 'Noto Sans Tamil', sans-serif; margin: 0; padding: 0; }
+    body { background-color: #f4f6f8; color: #2d3748; padding: 16px; max-width: 500px; margin: 0 auto; }
+    
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { color: #2b6cb0; font-size: 1.5rem; margin-bottom: 4px; }
+    
+    .filter-card, .quiz-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 16px; }
+    label { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 6px; color: #4a5568; }
+    select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 1rem; margin-bottom: 12px; }
+    
+    .question-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; line-height: 1.4; }
+    .options { display: flex; flex-direction: column; gap: 10px; }
+    .option-btn { width: 100%; padding: 12px; text-align: left; background: #edf2f7; border: 2px solid transparent; border-radius: 8px; font-size: 1rem; min-height: 48px; cursor: pointer; transition: 0.2s; }
+    
+    .option-btn.correct { background-color: #c6f6d5; border-color: #38a169; color: #22543d; }
+    .option-btn.wrong { background-color: #fed7d7; border-color: #e53e3e; color: #742a2a; }
+    
+    .explanation { margin-top: 14px; padding: 10px; background: #ebf8ff; border-left: 4px solid #3182ce; border-radius: 4px; font-size: 0.9rem; display: none; }
+    
+    .nav-btn { width: 100%; margin-top: 16px; padding: 12px; background: #3182ce; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+    .loading { text-align: center; padding: 20px; font-weight: 600; color: #718096; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>வேதாகம வினாடி வினா</h1>
+    <p style="font-size: 0.85rem; color: #718096;">Bible Quiz Application</p>
+  </header>
+
+  <div id="loading" class="loading">தரவுகள் ஏற்றப்படுகின்றன... (Loading Questions...)</div>
+
+  <div id="app" style="display: none;">
+    <!-- Book & Chapter Selectors -->
+    <div class="filter-card">
+      <label for="bookSelect">புத்தகம் (Book):</label>
+      <select id="bookSelect" onchange="filterQuestions()"></select>
+
+      <label for="chapterSelect">அதிகாரம் (Chapter):</label>
+      <select id="chapterSelect" onchange="filterQuestions()"></select>
+    </div>
+
+    <!-- Quiz Display Card -->
+    <div class="quiz-card" id="quizCard">
+      <div id="quizContent"></div>
+    </div>
+  </div>
+
+  <script>
+    // Replace this with your Google Apps Script Web App Deployment URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbzGjabv1q3qpP8Oy1PA8PuxYx4P7zta0QCW3L72VUdDkEdsT6qJyUd6ALnLa68eJ2sGqg/exec";
+
+    let allQuestions = [];
+    let currentFiltered = [];
+    let currentIndex = 0;
+
+    async function fetchQuestions() {
+      try {
+        const response = await fetch(API_URL);
+        allQuestions = await response.json();
+        
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        
+        populateBookDropdown();
+      } catch (err) {
+        document.getElementById("loading").innerText = "தரவுகளை ஏற்ற முடியவில்லை. URL-ஐ சரிபார்க்கவும்.";
+      }
+    }
+
+    function populateBookDropdown() {
+      const bookSelect = document.getElementById("bookSelect");
+      const books = [...new Set(allQuestions.map(q => q["Bible Book"]))];
+      
+      bookSelect.innerHTML = books.map(b => `<option value="${b}">${b}</option>`).join('');
+      populateChapterDropdown();
+    }
+
+    function populateChapterDropdown() {
+      const selectedBook = document.getElementById("bookSelect").value;
+      const chapterSelect = document.getElementById("chapterSelect");
+      
+      const chapters = [...new Set(
+        allQuestions.filter(q => q["Bible Book"] === selectedBook).map(q => q["Chapter"])
+      )];
+      
+      chapterSelect.innerHTML = chapters.map(c => `<option value="${c}">${c}</option>`).join('');
+      filterQuestions();
+    }
+
+    function filterQuestions() {
+      const selectedBook = document.getElementById("bookSelect").value;
+      const selectedChapter = document.getElementById("chapterSelect").value;
+      
+      currentFiltered = allQuestions.filter(q => 
+        q["Bible Book"] === selectedBook && String(q["Chapter"]) === String(selectedChapter)
+      );
+      
+      currentIndex = 0;
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const container = document.getElementById("quizContent");
+      if (!currentFiltered.length) {
+        container.innerHTML = "<p>இந்த அதிகாரத்தில் கேள்விகள் இல்லை.</p>";
+        return;
+      }
+
+      const q = currentFiltered[currentIndex];
+      const answerKey = q["Answer"].trim(); // E.g., 'Option C'
+      
+      container.innerHTML = `
+        <p style="font-size:0.8rem; color:#718096; margin-bottom:8px;">கேள்வி ${currentIndex + 1} / ${currentFiltered.length}</p>
+        <div class="question-title">${q["Question"]}</div>
+        
+        <div class="options">
+          <button class="option-btn" onclick="checkAnswer(this, 'Option A', '${answerKey}')">${q["Option A"]}</button>
+          <button class="option-btn" onclick="checkAnswer(this, 'Option B', '${answerKey}')">${q["Option B"]}</button>
+          <button class="option-btn" onclick="checkAnswer(this, 'Option C', '${answerKey}')">${q["Option C"]}</button>
+          <button class="option-btn" onclick="checkAnswer(this, 'Option D', '${answerKey}')">${q["Option D"]}</button>
+        </div>
+
+        <div class="explanation" id="expBox">
+          <strong>விளக்கம்:</strong> ${q["Solution / Explanation"]}
+        </div>
+
+        ${currentIndex < currentFiltered.length - 1 
+          ? `<button class="nav-btn" onclick="nextQuestion()">அடுத்த கேள்வி (Next)</button>`
+          : `<p style="margin-top:16px; text-align:center; font-weight:bold; color:#2b6cb0;">அதிகாரம் முடிந்தது! 🎉</p>`
+        }
+      `;
+    }
+
+    function checkAnswer(btn, selected, correct) {
+      const buttons = document.querySelectorAll('.option-btn');
+      buttons.forEach(b => b.disabled = true); // Lock options
+
+      if (selected === correct) {
+        btn.classList.add('correct');
+      } else {
+        btn.classList.add('wrong');
+        // Highlight correct option
+        buttons.forEach(b => {
+          if (b.getAttribute('onclick').includes(`'${correct}'`)) {
+            b.classList.add('correct');
+          }
+        });
+      }
+
+      document.getElementById('expBox').style.display = 'block';
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      renderQuestion();
+    }
+
+    // Initialize fetch on page load
+    fetchQuestions();
+  </script>
+</body>
+</html>
