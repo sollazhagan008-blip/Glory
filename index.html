@@ -161,31 +161,42 @@
       `;
     }
 
-    function checkAnswer(btn, selected, correct) {
-      const buttons = document.querySelectorAll('.option-btn');
-      buttons.forEach(b => b.disabled = true);
+  // This is the NEW, corrected checkAnswer function
+function checkAnswer(btn, selected, correct) {
+  const buttons = document.querySelectorAll('.option-btn');
+  // Step 1: Immediately disable all buttons and lock the choices
+  buttons.forEach(b => b.disabled = true);
 
-      if (selected === correct) {
-        btn.classList.add('correct');
-        scoreInSession++;
-      } else {
-        btn.classList.add('wrong');
-        buttons.forEach(b => {
-          if (b.getAttribute('onclick').includes(`'${correct}'`)) {
-            b.classList.add('correct');
-          }
-        });
-      }
+  // Step 2: Mark the user's selection
+  if (selected === correct) {
+    // Correct selection: Highlight user's button as green
+    btn.classList.add('correct');
+    // Add to session score (the existing logic will still work with local storage)
+    scoreInSession++;
+  } else {
+    // Incorrect selection: Highlight user's button as red
+    btn.classList.add('wrong');
+  }
 
-      document.getElementById('expBox').style.display = 'block';
-      
-      // Show appropriate next/finish button
-      const nextBtn = document.getElementById('nextBtn');
-      const finishBtn = document.getElementById('finishBtn');
-      if (nextBtn) nextBtn.style.display = 'block';
-      if (finishBtn) finishBtn.style.display = 'block';
+  // Step 3: Find and highlight *only* the single correct option
+  // This is the key change to fix the multiple green boxes.
+  buttons.forEach(b => {
+    // We use a stricter check: the 'onclick' attribute must *exactly* contain the string "'${correct}'"
+    // in the format ('Option X', 'correct answer key') that our checkAnswer is called with.
+    if (b.getAttribute('onclick').includes(`, '${correct}'`)) {
+      b.classList.add('correct');
     }
+  });
 
+  // Step 4: Show the explanation and verse reference
+  document.getElementById('expBox').style.display = 'block';
+
+  // Step 5: Reveal the navigation buttons ('Next Question' or 'Finish Quiz')
+  const nextBtn = document.getElementById('nextBtn');
+  const finishBtn = document.getElementById('finishBtn');
+  if (nextBtn) nextBtn.style.display = 'block';
+  if (finishBtn) finishBtn.style.display = 'block';
+}
     function nextQuestion() {
       currentIndex++;
       renderQuestion();
